@@ -93,7 +93,7 @@ ResistanceMeasurement/
 
 ## Tips
 
-- Use **rear terminals** (4-wire mode) for best accuracy
+- Use **rear terminals** (4-wire mode) for best accuracy (this program version is set by default in this mode)
 - Start with **low voltage** for unknown samples
 - Set appropriate **compliance current** to protect samples
 - Use **AUTO** for sample interval unless you need precise timing
