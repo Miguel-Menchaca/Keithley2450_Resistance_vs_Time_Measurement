@@ -43,6 +43,10 @@ public class ResistanceMeasurement extends JFrame{
 	private JTextField outputFilenameField;
 	private JTextArea outputArea;
 	
+	private JRadioButton frontTerminalRadio;
+	private JRadioButton rearTerminalRadio;
+	
+	
 	private final Preferences prefs = Preferences.userNodeForPackage(getClass());
 	
 	private JPanel chartContainer;
@@ -202,7 +206,7 @@ public class ResistanceMeasurement extends JFrame{
 		//
 		// LEFT SIDE — Chrono Parameters
 		//
-		JPanel leftParams = new JPanel(new GridLayout(6, 2, 4, 4));
+		JPanel leftParams = new JPanel(new GridLayout(5, 2, 4, 4));
 		
 
 
@@ -215,18 +219,32 @@ public class ResistanceMeasurement extends JFrame{
 		leftParams.add(time);
 		
 		// These fill last rows visually (so both panels look balanced)
-		leftParams.add(new JLabel(""));
-		leftParams.add(new JLabel(""));
-		leftParams.add(new JLabel(""));
-		leftParams.add(new JLabel(""));
-
-
+		// complete the rows with empty labels for better alignment
+		while (leftParams.getComponentCount() < 10) {
+			leftParams.add(new JLabel(""));
+		}
+		
 
 		//
 		// RIGHT SIDE — Additional Parameters
 		//
 
-		JPanel rightParams = new JPanel(new GridLayout(6, 2, 4, 4));
+		JPanel rightParams = new JPanel(new GridLayout(5, 2, 4, 4));
+		
+		rightParams.add(new JLabel("Terminals:"));
+		JPanel terminalPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+		frontTerminalRadio = new JRadioButton("Front");
+		rearTerminalRadio  = new JRadioButton("Rear");
+		ButtonGroup terminalGroup = new ButtonGroup();
+		terminalGroup.add(frontTerminalRadio);
+		terminalGroup.add(rearTerminalRadio);
+		// Restore preference (default = REAR, Keithley default)
+		boolean useRear = prefs.getBoolean("useRearTerminals", true);
+		rearTerminalRadio.setSelected(useRear);
+		frontTerminalRadio.setSelected(!useRear);
+		terminalPanel.add(frontTerminalRadio);
+		terminalPanel.add(rearTerminalRadio);
+		rightParams.add(terminalPanel);
 		
 		rightParams.add(new JLabel("Sample Interval (s):"));
 		sampleInterval = new JTextField(prefs.get("sampleInterval", "AUTO"));
@@ -245,10 +263,11 @@ public class ResistanceMeasurement extends JFrame{
 		rightParams.add(nplc);
 		
 		// These fill last rows visually (so both panels look balanced)
-		leftParams.add(new JLabel(""));
-		leftParams.add(new JLabel(""));
-		leftParams.add(new JLabel(""));
-		leftParams.add(new JLabel(""));
+		// complete the rows with empty labels for better alignment
+		while (rightParams.getComponentCount() < 10) {
+			rightParams.add(new JLabel(""));
+		}
+		
 
 		
 		inputPanel.add(leftParams);
@@ -494,6 +513,7 @@ public class ResistanceMeasurement extends JFrame{
 	        command.add(complianceCurrent.getText());
 	        command.add(folderPathField.getText());
 	        command.add(outputFilenameField.getText());
+	        command.add(rearTerminalRadio.isSelected() ? "REAR" : "FRONT");
 	        
 			// Prepare Python command with arguments
 			ProcessBuilder pb = new ProcessBuilder(command);

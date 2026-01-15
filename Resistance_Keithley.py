@@ -28,6 +28,7 @@ compliance_curr = float(sys.argv[6])
 output_folder = sys.argv[7]
 output_filename = sys.argv[8]
 output_path = f"{output_folder}/{output_filename}"
+terminal = sys.argv[9]  # "REAR" or "FRONT" terminals
 
 
 # ---- Logging ----
@@ -62,12 +63,12 @@ class ResistanceMeasurementProcedure(Procedure):
         print(f"Keithley candidates: {keithley_resources}") 
         if not keithley_resources:
             print("ERROR: No Keithley 2450 found!")
-            log.error(f"No Keithley 2450 found. Detected: {resources}")
+           # log.error(f"No Keithley 2450 found. Detected: {resources}")
             raise ConnectionError(f"No Keithley 2450 found. Detected: {resources}")
         
         self.instrument = Keithley2450(keithley_resources[0])
         print(f"Connected to: {keithley_resources[0]}")
-        log.info(f"Connected to: {keithley_resources[0]}")
+        #log.info(f"Connected to: {keithley_resources[0]}")
         self.instrument.reset()
         #self.instrument = Keithley2450("USB0::0x05E6::0x2450::04436600::INSTR") # La keithley de la estacion de mediciones 
         #self.instrument = Keithley2450("USB0::0x05E6::0x2450::04081967::INSTR")  # La keithley viejita
@@ -80,26 +81,28 @@ class ResistanceMeasurementProcedure(Procedure):
             self.integration_time = nplc_param / mains_frequency
             self.sample_int = self.integration_time #* 1.2
             
-            log.info(f"Automatic sample interval selected: {self.sample_int:.6f} s"
-                     f"(from NPLC={nplc_param})")
+           # log.info(f"Automatic sample interval selected: {self.sample_int:.6f} s"
+               #      f"(from NPLC={nplc_param})")
         else:
             # Manual mode
             try:
                 self.sample_int = float(sample_interval_arg)
                 print(f"Manual sample interval selected: {self.sample_int:.6f} s")
-                log.info(f"Manual sample interval selected: {self.sample_int:.6f} s")
+                #log.info(f"Manual sample interval selected: {self.sample_int:.6f} s")
             except:
                 print("Invalid sample interval argument. Falling back to AUTO mode.")
-                log.error("Invalid sample interval argument. Falling back to AUTO mode.")
+                #log.error("Invalid sample interval argument. Falling back to AUTO mode.")
                 mains_frequency = 60.0
                 self.integration_time = nplc_param / mains_frequency
                 self.sample_int = self.integration_time #* 1.2
         
-        # Use rear terminals
-        self.instrument.use_rear_terminals()
+     
+        # Use rear or front terminals depending on which was selected
 
-        # Use front terminals
-        #self.instrument.use_front_terminals()
+        if isinstance(terminal, str) and terminal.upper() == "REAR":
+            self.instrument.use_rear_terminals()
+        elif isinstance(terminal, str) and terminal.upper() == "FRONT":
+            self.instrument.use_front_terminals()
         
         # Explicitly configure for 4-wire measurements
         self.instrument.write(":SENSE:FUNC 'CURR'")  # Set to measure current
@@ -124,7 +127,7 @@ class ResistanceMeasurementProcedure(Procedure):
                 self.instrument.write(":SENSE:CURRENT:RANGE:AUTO ON")
             except Exception:
                 print("Could not set autorange using SCPI - continuing (driver may auto-range).")
-                log.warning("Could not set autorange using SCPI - continuing (driver may auto-range).")
+               # log.warning("Could not set autorange using SCPI - continuing (driver may auto-range).")
         else:
             try:
                 # numeric range in amperes
@@ -133,11 +136,11 @@ class ResistanceMeasurementProcedure(Procedure):
                 self.instrument.write(f":SENSE:CURRENT:RANGE {range_val}")
             except Exception:
                 print("Invalid current range argument; leaving instrument in default range or auto-range.")
-                log.warning("Invalid current range argument; leaving instrument in default range or auto-range.")
+                #log.warning("Invalid current range argument; leaving instrument in default range or auto-range.")
 
         self.instrument.enable_source()
-        print("Keithley 2450 initialized in 4-wire mode using rear terminals")
-        log.info("Keithley 2450 initialized in 4-wire mode using rear terminals")
+        print("Keithley 2450 initialized in 4-wire mode using {terminal} terminals")
+       # log.info("Keithley 2450 initialized in 4-wire mode using {terminal} terminals")
 
          # Start STOP listener thread
         stop_thread = threading.Thread(target=self._listen_for_stop, daemon=True)
@@ -151,8 +154,9 @@ class ResistanceMeasurementProcedure(Procedure):
             self.instrument.disable_source()
         except Exception as e:
             print("Error while shutting down instrument: %s", e)
-            log.exception("Error while shutting down instrument: %s", e)
-        log.info("Test completed and instrument output disabled.")
+          	# log.exception("Error while shutting down instrument: %s", e)
+           	#print("Test completed and instrument output disabled.")
+        	#log.info("Test completed and instrument output disabled.")
     
     def should_stop(self):
         return self.stop_requested
@@ -172,7 +176,7 @@ class ResistanceMeasurementProcedure(Procedure):
             
             if self.should_stop():
                 print(f"STOP requested by user - exiting measurement loop.")
-                log.info(f"STOP requested by user - exiting measurement loop.")
+               # log.info(f"STOP requested by user - exiting measurement loop.")
                 break
 
             current_time = now()
@@ -185,7 +189,7 @@ class ResistanceMeasurementProcedure(Procedure):
                     res = float('nan')
             except Exception as e:
                 print(f"Failed to read current: %s", e)
-                log.exception("Failed to read current: %s", e)
+                #log.exception("Failed to read current: %s", e)
                 i_meas = float('nan')
                 res = float('nan')
             
@@ -223,7 +227,7 @@ class ResistanceMeasurementProcedure(Procedure):
         start_time_global = now()
 
         # 1) Applying voltage (hold applied_voltage for applied_time)
-        log.info("Starting resistance measurement: V=%s, t=%s s", self.applied_voltage, self.applied_time)
+       # log.info("Starting resistance measurement: V=%s, t=%s s", self.applied_voltage, self.applied_time)
         if self.should_stop(): return
         self._measure_loop(self.applied_voltage, self.applied_time, "Applying Voltage")
 
@@ -238,12 +242,51 @@ if __name__ == "__main__":
         procedure.startup()
         procedure.execute()
     except KeyboardInterrupt:
-        log.warning("Measurement interrupted by user (KeyboardInterrupt).")
+        print("Measurement interrupted by user (KeyboardInterrupt).")
+        #log.warning("Measurement interrupted by user (KeyboardInterrupt).")
     except Exception as e:
-        log.exception("Unexpected error during measurement: %s", e)
+        print("Unexpected error during measurement: %s", e)
+        #log.exception("Unexpected error during measurement: %s", e)
     finally:
         procedure.shutdown()
         if data:
             # Create DataFrame from the collected data
             df = pd.DataFrame(data)
             df.to_csv(output_path + ".csv", index=False)
+            
+                        ##### Create line plot of resistance vs time ########
+
+            plt.plot(df['abs_time_s'], df['resistance_Ohm'], label="Resistance")
+
+            # Manually set axis limits based on data range
+            # Filter out NaN values for proper ranging
+            valid_resistance = df['resistance_Ohm'].dropna()
+            valid_time = df['abs_time_s'].dropna()
+
+            if len(valid_resistance) > 0:
+                # Add 5% margin to y-axis
+                y_max = valid_resistance.max()
+                y_margin = y_max * 0.05
+                plt.ylim(0, y_max + y_margin)
+
+            if len(valid_time) > 0:
+                # Set x-axis to data range
+                plt.xlim(valid_time.min(), valid_time.max())
+
+            formatter = EngFormatter(unit='Ω', places=1)
+            plt.gca().yaxis.set_major_formatter(formatter)
+
+            plt.title('Resistance vs Time')
+            plt.xlabel("Time (s)")
+            #plt.xticks(np.arange(0,10,0.5))
+            plt.ylabel("Resistance (Ω)")
+            plt.yticks
+            plt.legend()
+            plt.grid(True)
+            plt.tight_layout()  
+
+            plt.savefig(output_path + ".png", dpi=600)
+            plt.show()
+
+
+            print("Measurement Finished")
