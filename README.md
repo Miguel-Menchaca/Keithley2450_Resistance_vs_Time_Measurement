@@ -8,6 +8,7 @@ Java/Python desktop application for Keithley 2450 resistance measurement over ti
 ### Prerequisites
 - **Python 3.8+** ([Download](https://www.python.org/downloads/)) - ⚠️ Check "Add Python to PATH" during installation!
 - **Java 8+** ([Download](https://www.java.com/download/))
+- NI-VISA drivers installed in your device
 - **Keithley 2450** SourceMeter
 
 ### First Time Setup
@@ -29,9 +30,12 @@ That's it!
 
 - ✅ Real-time resistance plotting
 - ✅ 4-wire measurement support
+- ✅ Support for selecting REAR/FRONT terminals 
 - ✅ Configurable voltage, time, and measurement parameters
 - ✅ CSV data export
 - ✅ Live data streaming to GUI
+- ✅ Python generates an automatic plot image after finishing the measurement
+
 
 ## How to Use
 
@@ -39,6 +43,7 @@ That's it!
 2. **Set parameters:**
    - Applied Voltage (V)
    - Application Time (s)
+   - Select which terminals (REAR/FRONT) are going to be used
    - Sample Interval (s or "AUTO")
    - Compliance Current (A)
    - Current Range (A or "AUTO")
@@ -93,7 +98,7 @@ ResistanceMeasurement/
 
 ## Tips
 
-- Use **rear terminals** (4-wire mode) for best accuracy (this program version is set by default in this mode)
+- Use **rear terminals** (4-wire mode) for best accuracy
 - Start with **low voltage** for unknown samples
 - Set appropriate **compliance current** to protect samples
 - Use **AUTO** for sample interval unless you need precise timing
@@ -108,7 +113,7 @@ ResistanceMeasurement/
 
 ## Version
 
-Version 1.0.0
+Version 1.0.1
 
 ---
 
